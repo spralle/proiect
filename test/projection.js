@@ -100,4 +100,61 @@ describe('Projection', function() {
 		result.count.should.equal(1);
 		result.other.should.equal(2);
 	});	
+	it('#combine', function() {
+		var projection = new proiect.Projection();
+		projection
+			.init(function(s) {
+				s.count = 0;
+				s.other = 0;
+			}).property('key', 'test', function(s, i) {
+				s.count++;
+			}).otherwise(function(s, i) {
+				s.other++;
+			});
+		var projection2 = new proiect.Projection().combine(projection)
+		var projector = new proiect.Projector(projection2);
+		var result = projector.project([{ key:'test'}, {}, {}]);
+		result.count.should.equal(1);
+		result.other.should.equal(2);
+	});	
+	it('#async', function(done) {
+		var projection = new proiect.Projection();
+		projection
+			.init(function(s) {
+				s.count = 0;
+			}).any(function(state, element, next) {
+				process.nextTick(function() {
+					state.count++
+					next();
+				});
+			});
+		var projector = new proiect.Projector(projection);
+		projector.project([{}], function(err, result) {
+			result.count.should.equal(1);
+			done();
+		});
+	});	
+	it('#async without callback', function(done) {
+		var projection = new proiect.Projection();
+		projection
+			.init(function(s) {
+				s.count = 0;
+			}).any(function(state, element, next) {
+				process.nextTick(function() {
+					state.count++
+					next();
+				});
+			});
+		var caughtError = false;
+		try {
+			var projector = new proiect.Projector(projection);
+			projector.project([{}]);
+		} catch(e) {
+			done();
+			caughtError = true;
+		}
+		if(!caughtError) {
+			done(new Error("Didn't throw error when async but no callback"));
+		}
+	});		
 });
