@@ -157,4 +157,17 @@ describe('Projection', function() {
 			done(new Error("Didn't throw error when async but no callback"));
 		}
 	});		
+	it('#init not called when state provided', function() {
+		var projection = new proiect.Projection();
+		projection
+			.init(function(s) {
+				s.count = 0;
+			}).any(function(state, element) {
+				state.count++
+			});
+		var caughtError = false;
+		var projector = new proiect.Projector(projection, {count:100});
+		var result = projector.project([{}]);
+		result.count.should.equal(101);
+	});		
 });
